@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Henlo 🌸</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex flex-col items-center justify-start py-10 gap-8"
+  >
+    <div
+      class="text-center p-10 bg-white rounded-2xl shadow-xl max-w-md w-full"
+    >
+      <h1 class="text-5xl font-bold text-purple-700 mb-4">Henlo 👋</h1>
+      <p class="text-gray-600 text-lg mb-6">
+        Welcome to your Spring Boot + Tailwind page.
+      </p>
+      <a
+        href="https://spring.io"
+        target="_blank"
+        rel="noopener"
+        class="mt-6 inline-block px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+      >
+        Learn Spring Boot
+      </a>
+    </div>
+
+    <!-- POSTS & Pagination Section -->
+    <section class="bg-white rounded-xl shadow-md p-6 max-w-3xl w-full">
+      <h2 class="text-3xl font-semibold mb-4 text-purple-700">Posts</h2>
+
+      <div id="posts-container" class="space-y-4 mb-6 min-h-[150px]">
+        <!-- Posts go here -->
+      </div>
+
+      <div class="flex justify-between">
+        <button
+          id="prev-btn"
+          class="px-4 py-2 bg-purple-500 text-white rounded disabled:opacity-50"
+          disabled
+        >
+          Prev
+        </button>
+        <button
+          id="next-btn"
+          class="px-4 py-2 bg-purple-500 text-white rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </section>
+
+    <!-- Create Post Form -->
+    <section class="bg-white rounded-xl shadow-md p-6 max-w-3xl w-full">
+      <h2 class="text-3xl font-semibold mb-4 text-purple-700">Create Post</h2>
+      <form id="post-form" class="space-y-4 max-w-xl mx-auto">
+        <input
+          type="text"
+          name="id"
+          placeholder="ID (optional)"
+          class="w-full border border-gray-300 rounded px-3 py-2"
+        />
+        <input
+          type="text"
+          name="title"
+          placeholder="Title"
+          required
+          class="w-full border border-gray-300 rounded px-3 py-2"
+        />
+        <textarea
+          name="content"
+          placeholder="Content"
+          required
+          rows="4"
+          class="w-full border border-gray-300 rounded px-3 py-2"
+        ></textarea>
+        <button
+          type="submit"
+          class="px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+        >
+          Submit
+        </button>
+      </form>
+      <p id="form-message" class="mt-2 text-green-600 font-medium"></p>
+    </section>
+
+    <!-- Random Character Card -->
+    <section
+      class="bg-white rounded-xl shadow-md p-6 max-w-3xl w-full text-center"
+    >
+      <h2 class="text-3xl font-semibold mb-4 text-purple-700">
+        Random Rick and Morty Character
+      </h2>
+      <button
+        id="random-char-btn"
+        class="mb-6 px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+      >
+        Fetch Random Character
+      </button>
+
+      <div
+        id="char-card"
+        class="hidden max-w-md mx-auto rounded-lg shadow-lg p-6 bg-gradient-to-tr from-indigo-50 to-purple-50 relative"
+      >
+        <!-- Spinner container -->
+        <div
+          id="loadingSpinner"
+          class="hidden absolute inset-0 flex items-center justify-center bg-white bg-opacity-70 rounded-lg"
+        >
+          <div
+            class="w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"
+          ></div>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <img
+            id="char-img"
+            src=""
+            alt="Character Image"
+            class="w-24 h-24 rounded-full border-4 border-purple-500 object-cover"
+          />
+          <div class="text-left">
+            <h3 id="char-name" class="text-2xl font-bold text-purple-800"></h3>
+            <p><strong>Status:</strong> <span id="char-status"></span></p>
+            <p><strong>Species:</strong> <span id="char-species"></span></p>
+            <p><strong>Gender:</strong> <span id="char-gender"></span></p>
+            <p><strong>Origin:</strong> <span id="char-origin"></span></p>
+            <p><strong>Location:</strong> <span id="char-location"></span></p>
+            <p><strong>Episodes:</strong> <span id="char-episodes"></span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      const postsContainer = document.getElementById("posts-container");
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const postForm = document.getElementById("post-form");
+      const formMessage = document.getElementById("form-message");
+
+      const charCard = document.getElementById("char-card");
+      const charImg = document.getElementById("char-img");
+      const charName = document.getElementById("char-name");
+      const charStatus = document.getElementById("char-status");
+      const charSpecies = document.getElementById("char-species");
+      const charGender = document.getElementById("char-gender");
+      const charOrigin = document.getElementById("char-origin");
+      const charLocation = document.getElementById("char-location");
+      const charEpisodes = document.getElementById("char-episodes");
+
+      let currentPage = 0;
+      const limit = 5;
+      let totalPosts = 0;
+
+      async function loadPosts(page = 0) {
+        try {
+          const offset = page * limit;
+          const res = await fetch(`/posts?limit=${limit}&offset=${offset}`);
+          const data = await res.json();
+
+          totalPosts = data.total;
+          currentPage = page;
+
+          postsContainer.innerHTML = "";
+          if (data.posts.length === 0) {
+            postsContainer.innerHTML =
+              '<p class="text-gray-600 italic">No posts found.</p>';
+          } else {
+            data.posts.forEach((post) => {
+              const postEl = document.createElement("div");
+              postEl.className = "border rounded p-4 bg-purple-50 shadow-sm";
+              postEl.innerHTML = `
+                  <h3 class="text-xl font-semibold text-purple-700">
+                    ${escapeHtml(post.title)}
+                    <span class="text-sm text-white bg-purple-700 rounded px-2 ml-2 align-top float-right">${escapeHtml(
+                      post.id
+                    )}</span>
+                  </h3>
+                  <p class="text-gray-700">${escapeHtml(post.content)}</p>
+              `;
+              postsContainer.appendChild(postEl);
+            });
+          }
+
+          prevBtn.disabled = page === 0;
+          nextBtn.disabled = offset + limit >= totalPosts;
+        } catch (err) {
+          postsContainer.innerHTML = `<p class="text-red-600">Error loading posts.</p>`;
+        }
+      }
+
+      prevBtn.addEventListener("click", () => loadPosts(currentPage - 1));
+      nextBtn.addEventListener("click", () => loadPosts(currentPage + 1));
+
+      postForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        formMessage.textContent = "";
+        formMessage.classList.remove("text-red-600");
+        formMessage.classList.add("text-green-600");
+
+        const formData = new FormData(postForm);
+        const body = Object.fromEntries(formData.entries());
+
+        try {
+          const res = await fetch("/posts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+
+          if (!res.ok) throw new Error("Network response not OK");
+
+          const result = await res.json();
+          formMessage.textContent = `Post saved! ID: ${
+            result.id || "generated by DB"
+          }`;
+
+          postForm.reset();
+          // reload posts to show new/updated
+          loadPosts(currentPage);
+        } catch (error) {
+          formMessage.textContent = "Failed to save post.";
+          formMessage.classList.remove("text-green-600");
+          formMessage.classList.add("text-red-600");
+        }
+      });
+
+      document
+        .getElementById("random-char-btn")
+        .addEventListener("click", async (e) => {
+          const btn = e.currentTarget;
+          const spinner = document.getElementById("loadingSpinner");
+
+          // Disable button & set disabled attribute for Tailwind
+          btn.setAttribute("disabled", "");
+          btn.style.cursor = "not-allowed";
+
+          charCard.classList.remove("hidden");
+          charCard.classList.add("opacity-50");
+          spinner.classList.remove("hidden");
+
+          try {
+            const res = await fetch("/random-character");
+            if (!res.ok) throw new Error("Failed fetching character");
+            const data = await res.json();
+
+            const c = data.character;
+            charImg.src = c.image || "https://via.placeholder.com/150";
+            charImg.alt = c.name || "Character image";
+
+            charName.textContent = c.name || "Unknown";
+            charStatus.textContent = c.status || "Unknown";
+            charSpecies.textContent = c.species || "Unknown";
+            charGender.textContent = c.gender || "Unknown";
+            charOrigin.textContent = data.origin ? data.origin.name : "Unknown";
+            charLocation.textContent = data.location
+              ? data.location.name
+              : "Unknown";
+
+            const eps = data.episodes || [];
+            charEpisodes.textContent = eps.length
+              ? eps.map((e) => e.name).join(", ")
+              : "None";
+
+            charCard.classList.remove("opacity-50");
+            charCard.focus();
+            charCard.scrollIntoView({ behavior: "smooth", block: "center" });
+          } catch (error) {
+            charCard.classList.add("hidden");
+            alert("Failed to load character data.");
+          } finally {
+            spinner.classList.add("hidden");
+            charCard.classList.remove("opacity-50");
+
+            // Re-enable button & remove disabled attribute
+            btn.removeAttribute("disabled");
+            btn.style.cursor = "";
+          }
+        });
+
+      function escapeHtml(text) {
+        if (!text) return "";
+        return text.replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[m])
+        );
+      }
+
+      loadPosts(0);
+    </script>
+  </body>
+</html>
